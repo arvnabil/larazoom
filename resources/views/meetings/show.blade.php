@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $title ?? 'Join Zoom Meeting' }}</title>
+    <meta http-equiv="origin-trial" content="">
+    <!-- Zoom Web SDK CSS -->
+    <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.9.2/css/bootstrap.css" />
+    <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.9.2/css/react-select.css" />
+    <style>
+        @if ($viewType === 'full')
+            /* Full page styles */
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            #zmmtg-root {
+                background-color: #2D2D2D;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+        @else
+            /* Component styles */
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .card {
+                border: 1px solid #ddd;
+                border-radius: .25rem;
+                margin: 2rem;
+                font-family: sans-serif;
+            }
+
+            .card-header {
+                padding: .75rem 1.25rem;
+                margin-bottom: 0;
+                background-color: rgba(0, 0, 0, .03);
+                border-bottom: 1px solid rgba(0, 0, 0, .125);
+            }
+
+            .card-body {
+                flex: 1 1 auto;
+                padding: 1.25rem;
+            }
+
+            #meetingSDKElement {
+                width: 100%;
+                height: 600px;
+            }
+        @endif
+    </style>
+</head>
+
+<body>
+    @if ($viewType === 'full')
+        <div id="zmmtg-root"></div>
+    @else
+        <div class="card">
+            <div class="card-header">
+                <h4>Meeting: {{ $title ?? 'Zoom Meeting' }}</h4>
+            </div>
+            <div class="card-body">
+                <div id="meetingSDKElement">
+                    <!-- Zoom Meeting SDK Rendered Here -->
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <input type="hidden" value="{{ $sdkKey }}" id="sdkKey">
+    <input type="hidden" value="{{ $meeting_number }}" id="meeting_number">
+    <input type="hidden" value="{{ $password }}" id="password">
+    <input type="hidden" value="{{ $role }}" id="role">
+    <input type="hidden" value="{{ $userName }}" id="userName">
+    <input type="hidden" value="{{ $userEmail }}" id="userEmail">
+    <input type="hidden" value="{{ $token }}" id="token">
+
+    <!-- Dependensi Zoom Web SDK -->
+    <script src="https://source.zoom.us/3.9.2/lib/vendor/react.min.js"></script>
+    <script src="https://source.zoom.us/3.9.2/lib/vendor/react-dom.min.js"></script>
+    <script src="https://source.zoom.us/3.9.2/lib/vendor/redux.min.js"></script>
+    <script src="https://source.zoom.us/3.9.2/lib/vendor/redux-thunk.min.js"></script>
+    <script src="https://source.zoom.us/3.9.2/lib/vendor/lodash.min.js"></script>
+
+    <!-- Conditional SDK -->
+    @if ($viewType === 'full')
+        <script src="https://source.zoom.us/3.9.2/zoom-meeting-3.9.2.min.js"></script>
+    @else
+        <script src="https://source.zoom.us/3.9.2/zoom-meeting-embedded-3.9.2.min.js"></script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Common data retrieval
+            const sdkKey = document.getElementById('sdkKey').value;
+            // The meeting number must be an integer
+            const meetingNumber = parseInt(document.getElementById('meeting_number').value, 10);
+            const password = document.getElementById('password').value;
+            const userName = document.getElementById('userName').value;
+            const userEmail = document.getElementById('userEmail').value;
+            const signature = document.getElementById('token').value; // Using 'token' as signature
+            const leaveUrl = @json(url('/'));
+
+            @if ($viewType === 'full')
+                // Full Page/Client View Initialization
+                // The Client View SDK uses a callback-based approach, not promises.
+                ZoomMtg.preLoadWasm();
+                ZoomMtg.prepareWebSDK();
+
+                ZoomMtg.init({
+                    leaveUrl: leaveUrl,
+                    isSupportAV: true,
+                    success: function() {
+                        ZoomMtg.join({
+                            signature: signature,
+                            sdkKey: sdkKey,
+                            meetingNumber: meetingNumber,
+                            password: password,
+                            userName: userName,
+                            userEmail: userEmail,
+                            // The 'role' is embedded in the signature
+                            error: function(res) {
+                                console.error('Error joining meeting:', res);
+                            }
+                        });
+                    },
+                    error: function(res) {
+                        console.error('Error initializing Zoom SDK:', res);
+                    }
+                });
+            @else
+                // Component/Embedded View Initialization
+                const client = ZoomMtgEmbedded.createClient();
+                let meetingSDKElement = document.getElementById('meetingSDKElement');
+
+                client.init({
+                    debug: false, // Change to true for development
+                    zoomAppRoot: meetingSDKElement,
+                    leaveUrl: leaveUrl,
+                    isSupportAV: true,
+                }).then(() => {
+                    client.join({
+                        signature: signature,
+                        sdkKey: sdkKey,
+                        meetingNumber: meetingNumber,
+                        password: password,
+                        userName: userName,
+                        userEmail: userEmail,
+                    }).catch((error) => {
+                        console.error(error);
+                    });
+                }).catch((error) => {
+                    console.error(error);
+                });
+            @endif
+        });
+    </script>
+</body>
+
+</html>
