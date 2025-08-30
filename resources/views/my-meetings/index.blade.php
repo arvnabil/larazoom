@@ -50,6 +50,15 @@
             flex-grow: 1;
         }
 
+        .join-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-left: 1rem;
+            flex-shrink: 0;
+            /* Mencegah tombol menyusut */
+        }
+
         .meeting-details h3 {
             margin: 0 0 0.5rem 0;
         }
@@ -71,6 +80,7 @@
             margin-top: 1rem;
             display: inline-block;
             transition: background-color 0.2s;
+            text-align: center;
         }
 
         .join-button:hover {
@@ -117,9 +127,11 @@
                 align-items: flex-start;
             }
 
-            .join-button {
+            .join-actions {
                 width: 100%;
-                text-align: center;
+                flex-direction: row;
+                margin-left: 0;
+                margin-top: 1.5rem;
             }
 
             .zoom-connect-alert {
@@ -156,11 +168,20 @@
                         {{ \Carbon\Carbon::parse($meeting->start_time)->locale('id')->isoFormat('LLLL') }} WIB
                     </p>
                 </div>
-                <a href="{{ route('meetings.join', $meeting) }}"
-                    class="join-button {{ !$isZoomConnected && auth()->user()->hasRole('student') ? 'disabled' : '' }}"
-                    @if (!$isZoomConnected && auth()->user()->hasRole('student')) onclick="event.preventDefault(); alert('Silakan hubungkan akun Zoom Anda terlebih dahulu.');" @endif>
-                    Gabung Meeting
-                </a>
+                <div class="join-actions">
+                    <a href="{{ route('meetings.join', $meeting) }}"
+                        class="join-button {{ !$isZoomConnected && auth()->user()->hasRole('student') ? 'disabled' : '' }}"
+                        @if (!$isZoomConnected && auth()->user()->hasRole('student')) onclick="event.preventDefault(); alert('Silakan hubungkan akun Zoom Anda terlebih dahulu.');" @endif
+                        title="Buka meeting di dalam halaman ini">
+                        Join (Embedded)
+                    </a>
+                    <a href="{{ route('meetings.join', ['meeting' => $meeting, 'view' => 'full']) }}"
+                        class="join-button {{ !$isZoomConnected && auth()->user()->hasRole('student') ? 'disabled' : '' }}"
+                        @if (!$isZoomConnected && auth()->user()->hasRole('student')) onclick="event.preventDefault(); alert('Silakan hubungkan akun Zoom Anda terlebih dahulu.');" @endif
+                        title="Buka meeting di halaman penuh Zoom">
+                        Join (Full Page)
+                    </a>
+                </div>
             </div>
         @empty
             <div class="no-meetings">
