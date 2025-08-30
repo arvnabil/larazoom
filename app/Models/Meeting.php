@@ -35,9 +35,10 @@ class Meeting extends Model
         return $this->belongsTo(ZoomHost::class, 'zoom_host_id');
     }
 
-    // Meeting ini terhubung ke satu topik materi
-    public function topic()
+    // Meeting ini terhubung ke satu topik materi.
+    // Dinamakan topicModel untuk menghindari konflik dengan atribut 'topic' (string).
+    public function topicModel()
     {
-        return $this->belongsTo(Topic::class);
+        return $this->belongsTo(Topic::class, 'topic_id');
     }
 }

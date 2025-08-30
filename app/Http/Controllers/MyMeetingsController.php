@@ -18,10 +18,10 @@ class MyMeetingsController extends Controller
 
         if ($user->hasRole('teacher')) {
             // Guru: Ambil semua meeting dari mata pelajaran yang diajarkannya.
-            $meetings = Meeting::whereHas('topic.chapter.subject', function ($query) use ($user) {
+            $meetings = Meeting::whereHas('topicModel.chapter.subject', function ($query) use ($user) {
                 $query->where('teacher_id', $user->id);
             })
-            ->with(['topic.chapter.subject.teacher']) // Eager load relasi
+            ->with(['topicModel.chapter.subject.teacher']) // Eager load relasi
             ->orderBy('start_time', 'desc')
             ->get();
         } elseif ($user->hasRole('student')) {
@@ -32,10 +32,10 @@ class MyMeetingsController extends Controller
             $enrolledSubjectIds = $user->enrolledSubjects->pluck('id');
 
             if ($enrolledSubjectIds->isNotEmpty()) {
-                $meetings = Meeting::whereHas('topic.chapter.subject', function ($query) use ($enrolledSubjectIds) {
+                $meetings = Meeting::whereHas('topicModel.chapter.subject', function ($query) use ($enrolledSubjectIds) {
                     $query->whereIn('subjects.id', $enrolledSubjectIds);
                 })
-                ->with(['topic.chapter.subject.teacher']) // Eager load relasi
+                ->with(['topicModel.chapter.subject.teacher']) // Eager load relasi
                 ->orderBy('start_time', 'desc')
                 ->get();
             }

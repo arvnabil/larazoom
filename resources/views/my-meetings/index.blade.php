@@ -149,10 +149,9 @@
             <div class="meeting-item">
                 <div class="meeting-details">
                     <h3>{{ $meeting->topic }}</h3>
-                    <p><strong>Mata Pelajaran:</strong> {{ $meeting->topic->chapter->subject->name }}</p>
-                    <p><strong>Guru:</strong> {{ $meeting->topic->chapter->subject->teacher->name }}</p>
-                    <p><strong>Jadwal:</strong> {{ $meeting->start_time->isoFormat('dddd, D MMMM YYYY, HH:mm') }}
-                        (Durasi: {{ $meeting->duration }} menit)
+                    <p><strong>Mata Pelajaran:</strong> {{ $meeting->topicModel->chapter->subject->name }}</p>
+                    <p><strong>Guru:</strong> {{ $meeting->topicModel->chapter->subject->teacher->name }}</p>) }}
+                    (Durasi: {{ $meeting->duration }} menit)
                     </p>
                 </div>
                 <a href="{{ route('meetings.join', $meeting) }}"

@@ -17,8 +17,8 @@ class ZoomMeetingController
 
         // Dapatkan model Topic dari relasi. Kita panggil sebagai method `topic()`
         // untuk menghindari konflik dengan atribut/kolom `topic` yang berupa string.
-        $topic = $meeting->topic()->first();
-        $teacher = $topic?->chapter?->subject?->teacher;
+        $topicModel = $meeting->topicModel()->first();
+        $teacher = $topicModel?->chapter?->subject?->teacher;
 
         // Tentukan role: 1 untuk host (teacher), 0 untuk peserta (student)
         // Host adalah user yang role-nya 'teacher' DAN ID-nya sama dengan teacher yang mengajar subjek ini.
