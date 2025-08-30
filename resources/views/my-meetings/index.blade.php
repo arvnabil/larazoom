@@ -153,8 +153,7 @@
                     <p><strong>Guru:</strong> {{ $meeting->topicModel->chapter->subject->teacher->name }}</p>
                     <p><strong>Durasi: {{ $meeting->duration }} menit</strong></p>
                     <p><strong>Waktu Mulai:</strong>
-                        {{ \Carbon\Carbon::parse($meeting->start_time)->locale('id')->isoFormat('LLLL') }}
-                        - {{ \Carbon\Carbon::parse($meeting->end_time)->locale('id')->isoFormat('LLLL') }}
+                        {{ \Carbon\Carbon::parse($meeting->start_time)->locale('id')->isoFormat('LLLL') }} WIB
                     </p>
                 </div>
                 <a href="{{ route('meetings.join', $meeting) }}"

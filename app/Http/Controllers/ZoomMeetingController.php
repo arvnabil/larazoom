@@ -15,30 +15,45 @@ class ZoomMeetingController
         /** @var User $user */
         $user = auth()->user();
 
-        // Dapatkan model Topic dari relasi. Kita panggil sebagai method `topic()`
-        // untuk menghindari konflik dengan atribut/kolom `topic` yang berupa string.
-        $topicModel = $meeting->topicModel()->first();
-        $teacher = $topicModel?->chapter?->subject?->teacher;
+        // Dapatkan guru yang seharusnya menjadi host untuk meeting ini dari relasi.
+        $meetingTeacher = $meeting->topicModel?->chapter?->subject?->teacher;
 
-        // Tentukan role: 1 untuk host (teacher), 0 untuk peserta (student)
-        // Host adalah user yang role-nya 'teacher' DAN ID-nya sama dengan teacher yang mengajar subjek ini.
-        $actualRole = ($user->hasRole('teacher') && $teacher && $user->id === $teacher->id) ? 1 : 0;
-        // Tentukan tipe view berdasarkan query parameter, default ke 'component' (embedded).
-        $viewType = $request->input('view', 'component');
-        // Gunakan role yang sebenarnya (1 untuk host, 0 untuk peserta) untuk membuat signature,
-        // tidak peduli tipe view-nya. Ini adalah pendekatan yang paling benar sesuai dokumentasi Zoom.
-        $signatureRole = $actualRole;
+        // // Tentukan role: 1 untuk host (teacher), 0 untuk peserta (student)
+        // // Host adalah user yang role-nya 'teacher' DAN ID-nya sama dengan teacher yang mengajar subjek ini.
+        // $actualRole = ($user->hasRole('teacher') && $teacher && $user->id === $teacher->id) ? 1 : 0;
+        // // Tentukan tipe view berdasarkan query parameter, default ke 'component' (embedded).
+        // $viewType = $request->input('view', 'component');
+        // // Gunakan role yang sebenarnya (1 untuk host, 0 untuk peserta) untuk membuat signature,
+        // // tidak peduli tipe view-nya. Ini adalah pendekatan yang paling benar sesuai dokumentasi Zoom.
+        // $signatureRole = $actualRole;
+
+        // Role untuk signature Zoom: 1 untuk host, 0 untuk peserta (student).
+        // Ini adalah bagian krusial yang menentukan hak akses di dalam meeting.
+        // $signatureRole = $isHost ? 1 : 0;
+
+        // Tentukan apakah user yang sedang login adalah host dari meeting ini.
+        // Syaratnya: user harus punya role 'teacher' DAN ID-nya cocok dengan guru pengajar.
+        $isHost = $user->hasRole('teacher') && $meetingTeacher && $user->id === $meetingTeacher->id;
+
+        // Role untuk signature Zoom: 1 untuk host, 0 untuk peserta (student).
+        // Ini adalah bagian krusial yang menentukan hak akses di dalam meeting.
+        $signatureRole = $isHost ? 1 : 0;
 
         $zakToken = null;
-        // Hanya siswa (role 0) yang perlu ZAK token untuk bergabung.
-        // Guru (host) akan menggunakan start_url atau signature host.
-        if ($actualRole === 0) {
+        // Hanya peserta (bukan host) yang memerlukan ZAK token untuk bergabung.
+        // ZAK token memungkinkan siswa untuk melewati layar login Zoom jika akun mereka sudah terhubung via OAuth.
+        // Guru (host) tidak memerlukan ZAK token untuk memulai meeting via SDK, karena signature dengan role 1 sudah cukup.
+        // Inilah mekanisme "server-to-server" yang Anda maksud untuk host.
+        if (!$isHost) {
             $zakToken = $zoomService->getUserZakToken($user);
         }
 
         // Ambil SDK Key & Secret dari .env
         $sdkKey = config('services.zoom.sdk_key');
         $sdkSecret = config('services.zoom.sdk_secret');
+
+         // Tentukan tipe view: 'component' (embedded) atau 'full' (halaman penuh)
+        $viewType = $request->input('view', 'component');
 
         return view('meetings.show', [
             'title' => $meeting->topic,
@@ -47,32 +62,28 @@ class ZoomMeetingController
             'password' => $meeting->password ?? '',
             'userName' => $user->name,
             'userEmail' => $user->email,
-            'signature' => $this->generateSignature($sdkKey, $sdkSecret, $meeting->zoom_meeting_id, $signatureRole, $viewType),
+            // Signature ini adalah "kunci" untuk masuk ke meeting.
+            // Dibuat di server menggunakan SDK Secret dan dikirim ke client.
+            // Signature dengan role=1 akan menjadikan user sebagai host.
+            'signature' => $this->generateSignature($sdkKey, $sdkSecret, $meeting->zoom_meeting_id, $signatureRole),
             'zakToken' => $zakToken ?? '', // Kirim ZAK token ke view
-            'role' => $actualRole,
+            'role' => $signatureRole, // Digunakan oleh view Blade untuk logika UI
             'viewType' => $viewType,
         ]);
     }
 
-    private function generateSignature(string $sdkKey, string $sdkSecret, int $meetingNumber, int $role, string $viewType): string
+    private function generateSignature(string $sdkKey, string $sdkSecret, int $meetingNumber, int $role): string
     {
         $iat = time();
         $exp = $iat + 60 * 60 * 2;
         $payload = [
+            'sdkKey' => $sdkKey, // Untuk Web SDK v2.x.x, 'sdkKey' digunakan untuk semua view.
             'mn' => $meetingNumber,
             'role' => $role,
             'iat' => $iat,
             'exp' => $exp,
             'tokenExp' => $exp
         ];
-
-        // Kunci payload untuk SDK Key berbeda tergantung pada tipe view. Ini adalah
-        // detail penting yang sering terlewat.
-        if ($viewType === 'full') {
-            $payload['sdkKey'] = $sdkKey; // Client/Full Page View menggunakan 'sdkKey'.
-        } else {
-            $payload['appKey'] = $sdkKey; // Component/Embedded View menggunakan 'appKey'.
-        }
 
         return JWT::encode($payload, $sdkSecret, 'HS256');
     }

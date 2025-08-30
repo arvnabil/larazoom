@@ -21,7 +21,7 @@ class MeetingsTable
                 TextColumn::make('chapter_title')
                     ->label('Bab')
                     ->getStateUsing(function (Meeting $record): ?string {
-                        return $record->topic()->first()?->chapter?->title;
+                        return $record->topicModel?->chapter?->title;
                     }),
                 TextColumn::make('topic')
                     ->label('Judul Meeting')
