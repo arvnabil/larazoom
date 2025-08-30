@@ -22,14 +22,11 @@ class ZoomMeetingController
         // Tentukan role: 1 untuk host (teacher), 0 untuk peserta (student)
         // Host adalah user yang role-nya 'teacher' DAN ID-nya sama dengan teacher yang mengajar subjek ini.
         $actualRole = ($user->role === 'teacher' && $teacher && $user->id === $teacher->id) ? 1 : 0;
-
         // Tentukan tipe view berdasarkan query parameter, default ke 'component' (embedded).
         $viewType = $request->input('view', 'component');
-
-        // Untuk Component View (embedded), signature HARUS dibuat dengan role 1 (host).
-        // SDK akan secara otomatis mengatur pengguna sebagai peserta jika mereka bukan host meeting yang sebenarnya.
-        // Untuk Full Page View, kita gunakan role yang sebenarnya.
-        $signatureRole = ($viewType !== 'full') ? 1 : $actualRole;
+        // Gunakan role yang sebenarnya (1 untuk host, 0 untuk peserta) untuk membuat signature,
+        // tidak peduli tipe view-nya. Ini adalah pendekatan yang paling benar sesuai dokumentasi Zoom.
+        $signatureRole = $actualRole;
 
         // Ambil SDK Key & Secret dari .env
         $sdkKey = config('services.zoom.sdk_key');
@@ -42,7 +39,7 @@ class ZoomMeetingController
             'password' => $meeting->password ?? '',
             'userName' => $user->name,
             'userEmail' => $user->email,
-            'token' => $this->generateSignature($sdkKey, $sdkSecret, $meeting->zoom_meeting_id, $signatureRole, $viewType), // 'token' is the signature
+            'signature' => $this->generateSignature($sdkKey, $sdkSecret, $meeting->zoom_meeting_id, $signatureRole, $viewType),
             'role' => $actualRole,
             'viewType' => $viewType,
         ]);
@@ -50,22 +47,23 @@ class ZoomMeetingController
 
     private function generateSignature(string $sdkKey, string $sdkSecret, int $meetingNumber, int $role, string $viewType): string
     {
-        $iat = time() - 30;
-        $exp = $iat + 60 * 60 * 2; // Signature valid selama 2 jam
-
+        $iat = time();
+        $exp = $iat + 60 * 60 * 2;
         $payload = [
             'mn' => $meetingNumber,
             'role' => $role,
             'iat' => $iat,
             'exp' => $exp,
-            'tokenExp' => $exp,
+            'tokenExp' => $exp
         ];
 
-        // Kunci payload untuk SDK Key berbeda tergantung pada tipe view.
-        // Ini adalah detail penting yang sering terlewat.
-        // Component/Embedded View menggunakan 'appKey'.
-        // Client/Full Page View menggunakan 'sdkKey'.
-        $payload[$viewType === 'full' ? 'sdkKey' : 'appKey'] = $sdkKey;
+        // Kunci payload untuk SDK Key berbeda tergantung pada tipe view. Ini adalah
+        // detail penting yang sering terlewat.
+        if ($viewType === 'full') {
+            $payload['sdkKey'] = $sdkKey; // Client/Full Page View menggunakan 'sdkKey'.
+        } else {
+            $payload['appKey'] = $sdkKey; // Component/Embedded View menggunakan 'appKey'.
+        }
 
         return JWT::encode($payload, $sdkSecret, 'HS256');
     }

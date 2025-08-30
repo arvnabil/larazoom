@@ -13,6 +13,7 @@ class Meeting extends Model
         'zoom_meeting_id',
         'zoom_start_url',
         'zoom_join_url',
+        'password',
         // 'teacher_id', // HAPUS
         'zoom_host_id',
         'topic_id', // TAMBAHKAN

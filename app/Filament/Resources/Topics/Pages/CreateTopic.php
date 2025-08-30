@@ -64,6 +64,8 @@ class CreateTopic extends CreateRecord
             $duration
         );
 
+        // dd($meetingData);
+
         if (!$meetingData) {
             Notification::make()
                 ->title('Gagal Terhubung ke Zoom')
@@ -90,7 +92,8 @@ class CreateTopic extends CreateRecord
                 'topic' => $data['title'],
                 'start_time' => $startTime,
                 'duration' => $duration,
-                'zoom_meeting_id' => $meetingData['id'],
+                'password' => $meetingData['password'],
+                'zoom_meeting_id' => $meetingData['pmi'],
                 'zoom_start_url' => $meetingData['start_url'],
                 'zoom_join_url' => $meetingData['join_url'],
             ]);

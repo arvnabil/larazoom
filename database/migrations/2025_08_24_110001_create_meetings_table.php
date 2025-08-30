@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
             $table->foreignId('zoom_host_id')->constrained('zoom_hosts')->onDelete('cascade');
             $table->string('topic'); // Judul meeting, bisa sama dengan judul topik
+            $table->string('password'); // Judul meeting, bisa sama dengan judul topik
             $table->dateTime('start_time');
             $table->integer('duration'); // In minutes
             $table->bigInteger('zoom_meeting_id')->unique();

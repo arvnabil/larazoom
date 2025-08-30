@@ -76,14 +76,6 @@
         </div>
     @endif
 
-    <input type="hidden" value="{{ $sdkKey }}" id="sdkKey">
-    <input type="hidden" value="{{ $meeting_number }}" id="meeting_number">
-    <input type="hidden" value="{{ $password }}" id="password">
-    <input type="hidden" value="{{ $role }}" id="role">
-    <input type="hidden" value="{{ $userName }}" id="userName">
-    <input type="hidden" value="{{ $userEmail }}" id="userEmail">
-    <input type="hidden" value="{{ $token }}" id="token">
-
     <!-- Dependensi Zoom Web SDK -->
     <script src="https://source.zoom.us/3.9.2/lib/vendor/react.min.js"></script>
     <script src="https://source.zoom.us/3.9.2/lib/vendor/react-dom.min.js"></script>
@@ -99,69 +91,77 @@
     @endif
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Common data retrieval
-            const sdkKey = document.getElementById('sdkKey').value;
-            // The meeting number must be an integer
-            const meetingNumber = parseInt(document.getElementById('meeting_number').value, 10);
-            const password = document.getElementById('password').value;
-            const userName = document.getElementById('userName').value;
-            const userEmail = document.getElementById('userEmail').value;
-            const signature = document.getElementById('token').value; // Using 'token' as signature
-            const leaveUrl = @json(url('/'));
+        // Kumpulkan semua data dari PHP ke dalam satu objek JavaScript
+        const meetingConfig = {
+            sdkKey: @json($sdkKey),
+            meetingNumber: parseInt(@json($meeting_number), 10),
+            password: @json($password),
+            userName: @json($userName),
+            userEmail: @json($userEmail),
+            signature: @json($signature),
+            leaveUrl: @json(url('/')),
+            viewType: @json($viewType)
+        };
 
-            @if ($viewType === 'full')
+        document.addEventListener('DOMContentLoaded', function() {
+            if (meetingConfig.viewType === 'full') {
                 // Full Page/Client View Initialization
-                // The Client View SDK uses a callback-based approach, not promises.
                 ZoomMtg.preLoadWasm();
                 ZoomMtg.prepareWebSDK();
 
                 ZoomMtg.init({
-                    leaveUrl: leaveUrl,
+                    leaveUrl: meetingConfig.leaveUrl,
                     isSupportAV: true,
-                    success: function() {
+                    patchJsMedia: true, // From reference
+                    leaveOnPageUnload: true, // From reference
+                    success: function(success) {
+                        console.log('ZoomMtg.init success:', success);
                         ZoomMtg.join({
-                            signature: signature,
-                            sdkKey: sdkKey,
-                            meetingNumber: meetingNumber,
-                            password: password,
-                            userName: userName,
-                            userEmail: userEmail,
-                            // The 'role' is embedded in the signature
-                            error: function(res) {
-                                console.error('Error joining meeting:', res);
+                            signature: meetingConfig.signature,
+                            sdkKey: meetingConfig.sdkKey,
+                            meetingNumber: meetingConfig.meetingNumber,
+                            passWord: meetingConfig.password,
+                            userName: meetingConfig.userName,
+                            userEmail: meetingConfig.userEmail,
+                            // The 'role' is embedded in the signature.
+                            // tk (registrantToken) and zak are for other auth methods, not needed here.
+                            success: (joinSuccess) => {
+                                console.log('ZoomMtg.join success:', joinSuccess);
+                            },
+                            error: (joinError) => {
+                                console.error('Error joining meeting:', joinError);
                             }
                         });
                     },
-                    error: function(res) {
-                        console.error('Error initializing Zoom SDK:', res);
+                    error: (initError) => {
+                        console.error('Error initializing Zoom SDK:', initError);
                     }
                 });
-            @else
+            } else {
                 // Component/Embedded View Initialization
                 const client = ZoomMtgEmbedded.createClient();
                 let meetingSDKElement = document.getElementById('meetingSDKElement');
 
                 client.init({
-                    debug: false, // Change to true for development
+                    debug: true, // Set to true for development debugging
                     zoomAppRoot: meetingSDKElement,
-                    leaveUrl: leaveUrl,
+                    leaveUrl: meetingConfig.leaveUrl,
                     isSupportAV: true,
                 }).then(() => {
                     client.join({
-                        signature: signature,
-                        sdkKey: sdkKey,
-                        meetingNumber: meetingNumber,
-                        password: password,
-                        userName: userName,
-                        userEmail: userEmail,
+                        signature: meetingConfig.signature,
+                        sdkKey: meetingConfig.sdkKey,
+                        meetingNumber: meetingConfig.meetingNumber,
+                        password: meetingConfig.password,
+                        userName: meetingConfig.userName,
+                        userEmail: meetingConfig.userEmail,
                     }).catch((error) => {
                         console.error(error);
                     });
                 }).catch((error) => {
                     console.error(error);
                 });
-            @endif
+            }
         });
     </script>
 </body>
