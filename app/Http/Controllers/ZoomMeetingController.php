@@ -33,7 +33,13 @@ class ZoomMeetingController
 
         // Tentukan apakah user yang sedang login adalah host dari meeting ini.
         // Syaratnya: user harus punya role 'teacher' DAN ID-nya cocok dengan guru pengajar.
-        $isHost = $user->hasRole('teacher') && $meetingTeacher && $user->id === $meetingTeacher->id;
+        // Syaratnya:
+        // 1. User adalah guru yang ditugaskan untuk mata pelajaran ini.
+        // ATAU
+        // 2. User adalah super_admin (untuk keperluan administrasi dari panel).
+        $isDesignatedTeacher = $user->hasRole('teacher') && $meetingTeacher && $user->id === $meetingTeacher->id;
+        $isSuperAdmin = $user->hasRole('super_admin');
+        $isHost = $isDesignatedTeacher || $isSuperAdmin;
 
         // Role untuk signature Zoom: 1 untuk host, 0 untuk peserta (student).
         // Ini adalah bagian krusial yang menentukan hak akses di dalam meeting.
