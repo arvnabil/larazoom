@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Meeting;
 use App\Models\User;
+use App\Services\ZoomService;
 use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
 
 class ZoomMeetingController
 {
-    public function show(Meeting $meeting, Request $request)
+    public function show(Meeting $meeting, Request $request, ZoomService $zoomService)
     {
         /** @var User $user */
         $user = auth()->user();
@@ -21,12 +22,19 @@ class ZoomMeetingController
 
         // Tentukan role: 1 untuk host (teacher), 0 untuk peserta (student)
         // Host adalah user yang role-nya 'teacher' DAN ID-nya sama dengan teacher yang mengajar subjek ini.
-        $actualRole = ($user->role === 'teacher' && $teacher && $user->id === $teacher->id) ? 1 : 0;
+        $actualRole = ($user->hasRole('teacher') && $teacher && $user->id === $teacher->id) ? 1 : 0;
         // Tentukan tipe view berdasarkan query parameter, default ke 'component' (embedded).
         $viewType = $request->input('view', 'component');
         // Gunakan role yang sebenarnya (1 untuk host, 0 untuk peserta) untuk membuat signature,
         // tidak peduli tipe view-nya. Ini adalah pendekatan yang paling benar sesuai dokumentasi Zoom.
         $signatureRole = $actualRole;
+
+        $zakToken = null;
+        // Hanya siswa (role 0) yang perlu ZAK token untuk bergabung.
+        // Guru (host) akan menggunakan start_url atau signature host.
+        if ($actualRole === 0) {
+            $zakToken = $zoomService->getUserZakToken($user);
+        }
 
         // Ambil SDK Key & Secret dari .env
         $sdkKey = config('services.zoom.sdk_key');
@@ -40,6 +48,7 @@ class ZoomMeetingController
             'userName' => $user->name,
             'userEmail' => $user->email,
             'signature' => $this->generateSignature($sdkKey, $sdkSecret, $meeting->zoom_meeting_id, $signatureRole, $viewType),
+            'zakToken' => $zakToken ?? '', // Kirim ZAK token ke view
             'role' => $actualRole,
             'viewType' => $viewType,
         ]);

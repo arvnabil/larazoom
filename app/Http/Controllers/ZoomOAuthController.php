@@ -30,6 +30,11 @@ class ZoomOAuthController
             'redirect_uri' => config('services.zoom.oauth_redirect_uri'),
         ]);
 
+        if ($response->failed()) {
+            // Log error dan redirect kembali dengan pesan error
+            \Illuminate\Support\Facades\Log::error('Zoom OAuth Callback Error', $response->json());
+            return redirect()->route('my-meetings.index')->with('error', 'Gagal menghubungkan akun Zoom. Silakan coba lagi.');
+        }
         $tokenData = $response->json();
 
         ZoomOauthToken::updateOrCreate(
@@ -41,6 +46,6 @@ class ZoomOAuthController
             ]
         );
 
-        return redirect('/dashboard')->with('status', 'Akun Zoom berhasil terhubung!');
+        return redirect()->route('my-meetings.index')->with('status', 'Akun Zoom berhasil terhubung!');
     }
 }

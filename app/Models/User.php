@@ -6,11 +6,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -21,8 +25,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
     ];
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true; // Hanya pengguna dengan peran 'admin' yang dapat mengakses Filament
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -59,10 +67,15 @@ class User extends Authenticatable
         return $this->hasOne(ZoomOauthToken::class);
     }
 
-    // Ganti createdMeetings menjadi subjects
     // Seorang Teacher bisa mengajar banyak mata pelajaran
-    public function subjects()
+    public function taughtSubjects()
     {
         return $this->hasMany(Subject::class, 'teacher_id');
+    }
+
+    // Seorang Student bisa terdaftar di banyak mata pelajaran
+    public function enrolledSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'subject_user');
     }
 }

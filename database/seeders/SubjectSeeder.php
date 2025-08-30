@@ -14,16 +14,23 @@ class SubjectSeeder extends Seeder
     public function run(): void
     {
         // Find the teacher user created by UserSeeder
-        $teacher = User::where('role', 'teacher')->first();
+        $teacher = User::role('teacher')->first();
 
         if ($teacher) {
             // Create a subject and assign the teacher to it.
-            // This will have id=1 on a fresh database.
-            Subject::create([
+            $subject = Subject::create([
                 'name' => 'Mathematics 101',
                 'description' => 'An introductory course on fundamental mathematics concepts.',
                 'teacher_id' => $teacher->id,
             ]);
+
+            // Find student users
+            $students = User::role('student')->get();
+
+            // Attach students to the subject
+            if ($students->isNotEmpty() && $subject) {
+                $subject->students()->attach($students->pluck('id'));
+            }
         }
     }
 }

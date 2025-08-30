@@ -19,4 +19,10 @@ class Subject extends Model
     {
         return $this->hasMany(Chapter::class)->orderBy('order');
     }
+
+    // Satu mata pelajaran bisa memiliki banyak siswa
+    public function students()
+    {
+        return $this->belongsToMany(User::class, 'subject_user');
+    }
 }

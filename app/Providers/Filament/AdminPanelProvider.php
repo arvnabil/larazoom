@@ -2,10 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -52,8 +54,18 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+             ->plugin(FilamentShieldPlugin::make())
             ->authMiddleware([
                 Authenticate::class,
+            ])
+             // Menambahkan item navigasi kustom
+            ->navigationItems([
+                NavigationItem::make('Meeting Saya')
+                    ->url(fn (): string => route('my-meetings.index'), shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-video-camera')
+                    ->group('Aktivitas')
+                    ->sort(2) // Atur urutan agar muncul setelah Dashboard
+                    ->visible(fn (): bool => auth()->user()->hasAnyRole(['teacher', 'student'])),
             ]);
     }
 }

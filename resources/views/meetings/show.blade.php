@@ -99,6 +99,7 @@
             userName: @json($userName),
             userEmail: @json($userEmail),
             signature: @json($signature),
+            zakToken: @json($zakToken),
             leaveUrl: @json(url('/')),
             viewType: @json($viewType)
         };
@@ -123,6 +124,7 @@
                             passWord: meetingConfig.password,
                             userName: meetingConfig.userName,
                             userEmail: meetingConfig.userEmail,
+                            zak: meetingConfig.zakToken, // Gunakan ZAK token di sini
                             // The 'role' is embedded in the signature.
                             // tk (registrantToken) and zak are for other auth methods, not needed here.
                             success: (joinSuccess) => {
@@ -155,6 +157,7 @@
                         password: meetingConfig.password,
                         userName: meetingConfig.userName,
                         userEmail: meetingConfig.userEmail,
+                        zak: meetingConfig.zakToken, // Gunakan ZAK token di sini juga
                     }).catch((error) => {
                         console.error(error);
                     });
