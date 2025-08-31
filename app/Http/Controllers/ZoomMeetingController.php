@@ -23,14 +23,11 @@ class ZoomMeetingController
 
         // Jika waktu saat ini sudah melewati waktu berakhirnya meeting
         if (now()->gt($endTime)) {
-
-            $user->notify(
-                Notification::make()
-                    ->title('Meeting Sudah Selesai')
-                    ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
-                    ->warning()
-                    ->toDatabase(),
-            );
+            Notification::make()
+                ->title('Meeting Sudah Selesai')
+                ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
+                ->warning()
+                ->sendToDatabase($user, isEventDispatched: true);
             return redirect()->back();
         }
 
