@@ -25,7 +25,7 @@ class ZoomOauthTokenResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'Zoom Oauth Token';
 
-    protected static ?string $modelLabel = 'Zoom Host';
+    protected static ?string $modelLabel = 'Zoom Oauth Token';
 
     protected static string | UnitEnum | null $navigationGroup = 'Tools';
 
