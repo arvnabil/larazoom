@@ -7,11 +7,22 @@ use App\Models\User;
 use App\Services\ZoomService;
 use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ZoomMeetingController
 {
     public function show(Meeting $meeting, Request $request, ZoomService $zoomService)
     {
+        // --- Pengecekan Waktu Meeting ---
+        // Hitung waktu berakhirnya meeting. `start_time` sudah di-cast ke Carbon.
+        $endTime = $meeting->start_time->addMinutes($meeting->duration);
+
+        // Jika waktu saat ini sudah melewati waktu berakhirnya meeting
+        if (now()->gt($endTime)) {
+            // Redirect kembali ke halaman sebelumnya dengan notifikasi.
+            return redirect()->back()->with('warning', 'Meeting sudah selesai dan tidak bisa diakses lagi.');
+        }
+
         /** @var User $user */
         $user = auth()->user();
 
