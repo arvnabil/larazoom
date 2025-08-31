@@ -21,6 +21,7 @@ class Meeting extends Model
 
     protected $casts = [
         'start_time' => 'datetime',
+        'duration' => 'integer',
     ];
 
     // Setiap meeting dibuat oleh satu Teacher
