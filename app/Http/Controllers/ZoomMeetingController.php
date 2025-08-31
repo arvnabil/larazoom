@@ -24,8 +24,7 @@ class ZoomMeetingController
             Notification::make()
                 ->title('Meeting Sudah Selesai')
                 ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
-                ->warning()
-                ->flash();
+                ->warning();
 
             return redirect()->back();
         }
