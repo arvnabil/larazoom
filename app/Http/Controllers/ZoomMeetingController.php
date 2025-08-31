@@ -27,7 +27,7 @@ class ZoomMeetingController
                 ->title('Meeting Sudah Selesai')
                 ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
                 ->warning()
-                ->sendToDatabase($user, isEventDispatched: true);
+                ->toDatabase($user);
             return redirect()->back();
         }
 
