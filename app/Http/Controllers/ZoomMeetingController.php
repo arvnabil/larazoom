@@ -23,12 +23,12 @@ class ZoomMeetingController
 
         // Jika waktu saat ini sudah melewati waktu berakhirnya meeting
         if (now()->gt($endTime)) {
-            Notification::make()
+            return Notification::make()
                 ->title('Meeting Sudah Selesai')
                 ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
                 ->warning()
                 ->toDatabase($user);
-            return redirect()->back();
+
         }
 
         // Dapatkan guru yang seharusnya menjadi host untuk meeting ini dari relasi.
