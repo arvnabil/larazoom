@@ -17,20 +17,22 @@ class ZoomMeetingController
         // --- Pengecekan Waktu Meeting ---
         // Hitung waktu berakhirnya meeting. `start_time` sudah di-cast ke Carbon.
         $endTime = $meeting->start_time->addMinutes($meeting->duration);
+        /** @var User $user */
+        $user = auth()->user();
+
 
         // Jika waktu saat ini sudah melewati waktu berakhirnya meeting
         if (now()->gt($endTime)) {
-            // Redirect kembali ke halaman sebelumnya dengan notifikasi Filament.
-            Notification::make()
-                ->title('Meeting Sudah Selesai')
-                ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
-                ->warning();
 
+            $user->notify(
+                Notification::make()
+                    ->title('Meeting Sudah Selesai')
+                    ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
+                    ->warning()
+                    ->toDatabase(),
+            );
             return redirect()->back();
         }
-
-        /** @var User $user */
-        $user = auth()->user();
 
         // Dapatkan guru yang seharusnya menjadi host untuk meeting ini dari relasi.
         $meetingTeacher = $meeting->topicModel?->chapter?->subject?->teacher;
