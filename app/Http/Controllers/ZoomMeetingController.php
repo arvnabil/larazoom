@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Services\ZoomService;
+use Filament\Notifications\Notification;
 use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,8 +20,14 @@ class ZoomMeetingController
 
         // Jika waktu saat ini sudah melewati waktu berakhirnya meeting
         if (now()->gt($endTime)) {
-            // Redirect kembali ke halaman sebelumnya dengan notifikasi.
-            return redirect()->back()->with('warning', 'Meeting sudah selesai dan tidak bisa diakses lagi.');
+            // Redirect kembali ke halaman sebelumnya dengan notifikasi Filament.
+            Notification::make()
+                ->title('Meeting Sudah Selesai')
+                ->body('Meeting ini sudah selesai dan tidak bisa diakses lagi.')
+                ->warning()
+                ->flash();
+
+            return redirect()->back();
         }
 
         /** @var User $user */
